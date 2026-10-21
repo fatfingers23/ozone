@@ -27,9 +27,11 @@ ENTRYPOINT ["dumb-init", "--"]
 EXPOSE 3000
 ENV OZONE_PORT=3000
 ENV NODE_ENV=production
+HEALTHCHECK --interval=10s --timeout=3s --retries=3 --start-period=10s \
+  CMD ["node", "-e", "fetch('http://127.0.0.1:' + (process.env.OZONE_PORT || '3000') + '/xrpc/_health', { signal: AbortSignal.timeout(2500) }).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
 USER node
 CMD ["node", "./service"]
 
-LABEL org.opencontainers.image.source=https://github.com/bluesky-social/ozone
-LABEL org.opencontainers.image.description="Ozone Moderation Service Web UI"
+LABEL org.opencontainers.image.source=https://github.com/eurosky-social/ozone
+LABEL org.opencontainers.image.description="Ozone Moderation Service Web UI (eurosky fork)"
 LABEL org.opencontainers.image.licenses=MIT
