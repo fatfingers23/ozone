@@ -1,74 +1,31 @@
-'use client' // @TODO Totally circumventing SSC
-import '../styles/globals.css'
-import 'yet-another-react-lightbox/styles.css'
-import 'yet-another-react-lightbox/plugins/thumbnails.css'
-import 'yet-another-react-lightbox/plugins/captions.css'
-import { ToastContainer } from 'react-toastify'
+import { ClientLayout } from './client-layout'
 
-import { Shell } from '@/shell/Shell'
-import { CommandPaletteRoot } from '@/shell/CommandPalette/Root'
-import { AuthProvider } from '@/shell/AuthContext'
-import { DefaultQueryClientProvider } from '@/shell/QueryClient'
-import { GlobalQueryClientProvider } from '@/shell/QueryClient'
-import { isDarkModeEnabled } from '@/common/useColorScheme'
-import { HANDLE_RESOLVER_URL, PLC_DIRECTORY_URL } from '@/lib/constants'
-import { ConfigProvider } from '@/shell/ConfigContext'
-import { ConfigurationProvider } from '@/shell/ConfigurationContext'
-import { ExternalLabelersProvider } from '@/shell/ExternalLabelersContext'
+// Force dynamic rendering to read env vars at request time
+export const dynamic = 'force-dynamic'
 
+const env = (key: string, defaultValue = '') =>
+  process.env[key] || process.env[`NEXT_PUBLIC_${key}`] || defaultValue
+
+// Server Component - reads env vars at runtime
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  // Since we're doing everything client side and not using RSC, we can't use `Metadata` feature from next
-  // to have these head tags from the server
-  const isLocal =
-    typeof window !== 'undefined'
-      ? window?.location.host.includes('localhost:')
-      : false
+  const config = {
+    plcDirectoryUrl: env('PLC_DIRECTORY_URL', 'https://plc.directory'),
+    handleResolverUrl: env('HANDLE_RESOLVER_URL', 'https://api.bsky.app'),
+    ozoneServiceDid: env('OZONE_SERVICE_DID'),
+    ozonePublicUrl: env('OZONE_PUBLIC_URL'),
+    queueConfig: env('QUEUE_CONFIG', '{}'),
+    queueSeed: env('QUEUE_SEED'),
+    socialAppUrl: env('SOCIAL_APP_URL', 'https://bsky.app'),
+    newAccountMarkerThresholdInDays: env('NEW_ACCOUNT_MARKER_THRESHOLD_IN_DAYS', '7'),
+    youngAccountMarkerThresholdInDays: env('YOUNG_ACCOUNT_MARKER_THRESHOLD_IN_DAYS', '30'),
+    domainsAllowingEmailCommunication: env('DOMAINS_ALLOWING_EMAIL_COMMUNICATION'),
+    highProfileFollowerThreshold: env('HIGH_PROFILE_FOLLOWER_THRESHOLD', 'Infinity'),
+    fallbackVideoUrl: env('FALLBACK_VIDEO_URL'),
+  }
 
-  return (
-    <html
-      lang="en"
-      className={`h-full bg-gray-50 dark:bg-slate-900 ${
-        isDarkModeEnabled() ? 'dark' : ''
-      }`}
-    >
-      <title>Ozone</title>
-      <link
-        rel="icon"
-        href={`/img/logo-${isLocal ? 'white' : 'colorful'}.png`}
-        sizes="any"
-      />
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <body className="h-full overflow-hidden">
-        <ToastContainer
-          position="bottom-right"
-          autoClose={4000}
-          hideProgressBar={false}
-          closeOnClick
-        />
-
-        <GlobalQueryClientProvider>
-          <ConfigProvider>
-            <AuthProvider
-              plcDirectoryUrl={PLC_DIRECTORY_URL}
-              handleResolver={HANDLE_RESOLVER_URL}
-            >
-              <DefaultQueryClientProvider>
-                <ConfigurationProvider>
-                  <ExternalLabelersProvider>
-                    <CommandPaletteRoot>
-                      <Shell>{children}</Shell>
-                    </CommandPaletteRoot>
-                  </ExternalLabelersProvider>
-                </ConfigurationProvider>
-              </DefaultQueryClientProvider>
-            </AuthProvider>
-          </ConfigProvider>
-        </GlobalQueryClientProvider>
-      </body>
-    </html>
-  )
+  return <ClientLayout config={config}>{children}</ClientLayout>
 }
